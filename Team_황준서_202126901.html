@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Moving-Camera AV-SELD Challenge</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #ffffff;
+    --ink: #1a1a1a;
+    --sub: #595959;
+    --rule: #dcdcdc;
+    --accent: #0e6b6b;
+    --code-bg: #f4f4f5;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font-family: "Noto Sans KR", "Malgun Gothic", "Apple SD Gothic Neo", sans-serif; font-size: 15px; line-height: 1.85; word-break: keep-all; overflow-wrap: break-word; }
+  a { color: var(--accent); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+  a:hover { text-decoration-thickness: 2px; }
+
+  /* 읽은 정도 표시 */
+  #progress { position: fixed; top: 0; left: 0; height: 3px; width: 0; background: var(--accent); z-index: 100; }
+
+  /* 상단 소개 */
+  #hero { max-width: 1120px; margin: 0 auto; padding: 64px 24px 36px; }
+  #hero h1 { margin: 0; font-size: 38px; line-height: 1.3; font-weight: 700; letter-spacing: -.015em; }
+  #hero .lead { max-width: 680px; margin: 20px 0 0; font-size: 17px; color: #333; }
+  #hero .links { margin: 24px 0 0; font-size: 14px; }
+  #hero .links a { margin-right: 22px; font-weight: 500; }
+
+  /* 본문 + 챕터 표시창 */
+  #layout { max-width: 1120px; margin: 0 auto; padding: 0 24px 64px; display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 56px; border-top: 1px solid var(--rule); }
+  #side { position: sticky; top: 0; align-self: start; max-height: 100vh; overflow-y: auto; padding: 32px 0 32px; font-size: 13.5px; line-height: 1.5; }
+  #side .name { font-weight: 700; margin: 0 0 14px; font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--sub); }
+  #side ol, #side ul { list-style: none; margin: 0; padding: 0; }
+  #side a.ch { display: block; padding: 7px 0 7px 14px; border-left: 2px solid var(--rule); color: var(--sub); text-decoration: none; transition: color .15s, border-color .15s; }
+  #side a.ch .n { display: inline-block; width: 1.4em; font-variant-numeric: tabular-nums; }
+  #side a.ch:hover { color: var(--ink); }
+  #side li.on > a.ch { border-left-color: var(--accent); color: var(--accent); font-weight: 700; }
+  #side ul.sub { display: none; border-left: 2px solid var(--accent); padding: 2px 0 6px 0; margin-bottom: 4px; }
+  #side li.on > ul.sub { display: block; }
+  #side ul.sub a { display: block; padding: 3px 0 3px 30px; color: var(--sub); text-decoration: none; font-size: 12.5px; }
+  #side ul.sub a:hover { color: var(--ink); }
+  #side ul.sub a.on { color: var(--ink); font-weight: 700; }
+  #side .top { display: inline-block; margin-top: 18px; padding-left: 14px; color: var(--sub); font-size: 12.5px; }
+
+  #content { min-width: 0; max-width: 760px; padding-bottom: 20px; }
+
+  /* 제목 */
+  section { padding-top: 8px; }
+  h2 { margin: 56px 0 14px; padding-top: 18px; border-top: 2px solid var(--ink); font-size: 26px; line-height: 1.35; font-weight: 700; letter-spacing: -.01em; scroll-margin-top: 16px; }
+  section:first-of-type h2 { margin-top: 36px; }
+  h2::before { content: attr(data-no); display: block; font-size: 12.5px; letter-spacing: .14em; color: var(--accent); margin-bottom: 4px; }
+  h3 { margin: 34px 0 8px; font-size: 16.5px; font-weight: 700; scroll-margin-top: 16px; }
+  p { margin: 10px 0; }
+
+  /* 표 */
+  .scroll { overflow-x: auto; margin: 14px 0; }
+  table { border-collapse: collapse; width: 100%; font-size: 13.5px; line-height: 1.55; }
+  th, td { padding: 8px 12px 8px 0; text-align: left; vertical-align: top; border-bottom: 1px solid var(--rule); }
+  th { border-bottom: 2px solid var(--ink); font-weight: 700; white-space: nowrap; }
+  td.num, th.num { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; padding-right: 14px; }
+  td.arrow { font-size: 16px; line-height: 1.4; width: 3em; }
+  tbody tr:hover td { background: rgba(14, 107, 107, .06); }
+  tr.ref td { color: var(--sub); }
+  tr.todo td { color: var(--sub); font-style: italic; }
+  .bar { display: block; height: 3px; margin-top: 4px; background: var(--accent); margin-left: auto; opacity: .85; }
+  td.vcol { min-width: 150px; }
+
+  /* 코드 */
+  pre { position: relative; background: var(--code-bg); margin: 14px 0; padding: 14px 16px; overflow-x: auto; font-size: 12.8px; line-height: 1.6; border-left: 3px solid var(--ink); }
+  code { font-family: Consolas, "SFMono-Regular", Menlo, monospace; font-size: .9em; background: var(--code-bg); padding: 1px 4px; }
+  pre code { background: none; padding: 0; font-size: inherit; }
+  .copy { position: absolute; top: 6px; right: 8px; border: 0; background: none; color: var(--sub); font: inherit; font-size: 12px; cursor: pointer; padding: 2px 4px; opacity: 0; transition: opacity .15s; }
+  pre:hover .copy, .copy:focus { opacity: 1; }
+  .copy:hover { color: var(--accent); }
+
+  ul, ol { padding-left: 1.3em; margin: 10px 0; }
+  li { margin: 4px 0; }
+  .note { font-size: 13px; color: var(--sub); }
+  .todo-text { background: #fff3b0; padding: 0 4px; }
+
+  svg { max-width: 100%; height: auto; display: block; }
+  figure { margin: 18px 0; display: flex; gap: 28px; align-items: flex-start; flex-wrap: wrap; }
+  figure svg text { font-family: "Noto Sans KR", sans-serif; }
+
+  /* 좁은 화면: 챕터 표시창을 상단 가로 막대로 */
+  @media (max-width: 900px) {
+    #hero { padding-top: 40px; }
+    #hero h1 { font-size: 28px; }
+    #layout { display: block; padding-top: 0; }
+    #side { max-height: none; padding: 0; margin: 0 -24px; background: var(--bg); border-bottom: 1px solid var(--rule); z-index: 20; }
+    #side .name, #side ul.sub, #side .top { display: none !important; }
+    #side ol { display: flex; overflow-x: auto; padding: 0 24px; }
+    #side a.ch { border-left: 0; border-bottom: 3px solid transparent; padding: 11px 14px 8px 0; white-space: nowrap; }
+    #side li.on > a.ch { border-bottom-color: var(--accent); }
+    h2, h3 { scroll-margin-top: 56px; }
+  }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+</style>
+</head>
+<body>
+<div id="progress"></div>
+
+<header id="hero">
+  <h1>Moving-Camera Audio-Visual<br>Sound Event Localization and Detection</h1>
+  <p class="lead">카메라가 움직이는 영상과 스테레오 음향을 입력으로 받아 소리 이벤트의 종류, 방위각, 거리를 추정하는 챌린지.</p>
+  <p class="links">
+    <a data-gh="" href="https://github.com/bbbmah/ASR_2026_Challenge_MovCam_AV-SELD">GitHub 저장소</a>
+    <a data-gh="/tree/main/dataset" href="https://github.com/bbbmah/ASR_2026_Challenge_MovCam_AV-SELD/tree/main/dataset">데이터셋 다운로드</a>
+    <a data-gh="/tree/main/baseline/seld_challenge" href="https://github.com/bbbmah/ASR_2026_Challenge_MovCam_AV-SELD/tree/main/baseline/seld_challenge">베이스라인 코드</a>
+    <a data-gh="/blob/main/baseline/seld_challenge/score.py" href="https://github.com/bbbmah/ASR_2026_Challenge_MovCam_AV-SELD/blob/main/baseline/seld_challenge/score.py">평가 코드</a>
+  </p>
+</header>
+
+<div id="layout">
+
+<nav id="side" aria-label="챕터"></nav>
+
+<main id="content">
+
+<!-- ====================================================== 1 -->
+<section id="task">
+<h2 data-no="1">태스크 개요</h2>
+
+<h3>1.1 AV-SELD 태스크</h3>
+<p>
+  SELD(Sound Event Localization and Detection)는 FOA 음향을 기반으로 소리 이벤트의 종류, 시간, 방위각, 거리를 추정하는 문제다.
+  AV-SELD(Audio-Visual SELD)는 여기에 영상을 추가 입력으로 사용하며, 검출한 소리가 화면 안(on-screen)에 있는지 밖(off-screen)에 있는지도 함께 판단한다.
+</p>
+
+<h3>1.2 챌린지 배경과 Moving-Camera</h3>
+<p>
+  기존의 AV-SELD 태스크는 360도 전방위 음향과 비디오를 사용하여 소리 이벤트를 탐지하는 것을 목표로 했다.
+  하지만 DCASE 2025 Task 3에서는 360도 데이터가 아닌, 스테레오 음향과 제한된 시야각의 비디오를 이용한 AV-SELD 태스크를 다루었다.
+</p>
+<p>
+  그런데 DCASE 2025 Task 3의 결과에서는 음향에 영상을 추가해도 성능이 크게 오르지 않는 것으로 보고되었다.
+  학습 및 평가 데이터를 분석한 결과, 카메라가 클립 내내 고정되어 있어 소리의 발원지가 화면에 들어올 기회가 매우 적고, 영상 길이가 5초로 짧아 영상을 활용하기 어렵다고 판단했다.
+</p>
+<p>
+  실제로 DCASE 2025의 학습 및 평가 데이터에서 소리의 발원지가 화면 밖에 있는 비율은 약 75%에 달했다.
+  챌린지에 참여한 모델들이 소리의 발원지가 화면에 있는지 없는지를 맞추는 정확도도 70~80%대에 그쳐, 사실상 찍는 것과 비슷한 수준이었다.
+</p>
+<p>
+  우리는 데이터에서 영상을 활용할 수 있는 여건을 높이고 영상의 효과를 더 믿을 수 있게 평가하기 위해 Moving-Camera AV-SELD 챌린지를 기획했다.
+  같은 STARSS23 원본으로 두 가지를 바꾼 데이터셋을 구성한다.
+</p>
+<ul>
+  <li><b>카메라 이동</b>: 클립을 5초에서 20초로 늘리고, 그 동안 카메라가 좌우로 한 바퀴 돌고 위아래로도 기울어진다. 따라서 소리의 발원지가 화면에 들어올 기회가 많아진다.</li>
+  <li><b>360도 방위각 추정</b>: 기존 벤치마크는 앞, 뒤 방향 판단을 추정하지 않았다. 뒤쪽 부분의 방위각을 앞쪽으로 접어서 채점하므로 좌우 방향만 맞히는 형식이다. 이 챌린지는 학습, 검증, 테스트 데이터 모두 방위각 −180°~180°를 그대로 사용하여 비디오 정보를 이용한 앞 뒤 판단 성능을 평가한다.</li>
+</ul>
+<p>영상을 잘 활용하는 모델이 점수에서 실제로 앞서는지를 평가한다.</p>
+</section>
+
+
+
+<!-- ====================================================== 2 -->
+<section id="detail">
+<h2 data-no="2">상세 태스크 설명</h2>
+
+<h3>2.1 입력 데이터</h3>
+<figure>
+<svg width="280" height="280" viewBox="0 0 300 300" role="img" aria-label="방위각 규약: 정면 0도, 왼쪽 +90도, 오른쪽 -90도, 뒤쪽 180도. 카메라 시야는 정면 좌우 50도.">
+  <rect x="0.5" y="0.5" width="299" height="299" fill="none" stroke="#dcdcdc"/>
+  <circle cx="150" cy="150" r="110" fill="none" stroke="#999" stroke-dasharray="4 3"/>
+  <path d="M150 150 L65.7 79.3 A110 110 0 0 1 234.3 79.3 Z" fill="#0e6b6b" fill-opacity=".13" stroke="#0e6b6b"/>
+  <line x1="150" y1="150" x2="150" y2="30" stroke="#1a1a1a" stroke-width="2"/>
+  <polygon points="150,24 144,36 156,36" fill="#1a1a1a"/>
+  <circle cx="150" cy="150" r="5" fill="#1a1a1a"/>
+  <circle cx="55" cy="205" r="7" fill="#0e6b6b"/>
+  <line x1="150" y1="150" x2="55" y2="205" stroke="#0e6b6b" stroke-dasharray="3 3"/>
+  <text x="150" y="16" text-anchor="middle" font-size="12">0° (정면)</text>
+  <text x="12" y="154" font-size="12">+90°</text>
+  <text x="262" y="154" font-size="12">−90°</text>
+  <text x="150" y="292" text-anchor="middle" font-size="12">±180° (후면)</text>
+  <text x="150" y="68" text-anchor="middle" font-size="11" fill="#0e6b6b">카메라 시야 ±50°</text>
+  <text x="66" y="226" font-size="11" fill="#0e6b6b">소리 (az = +120°)</text>
+</svg>
+<ul style="flex:1; min-width:260px; margin:0">
+  <li>위에서 내려다본 모습이다. 방위각은 카메라 정면이 0°이고 반시계 방향(왼쪽)이 양수이다.</li>
+  <li>카메라가 회전하면 같은 소리라도 방위각이 달라진다. 정답은 항상 해당 프레임의 카메라 기준으로 주어진다.</li>
+  <li>소리의 방향이 카메라 시야 안에 있으면 <code>onscreen=1</code>이다.</li>
+  <li>카메라가 향한 방향으로 정답을 추측할 수 없도록 카메라의 움직임은 소리의 위치와 무관하게 무작위로 정했다.</li>
+</ul>
+</figure>
+<p>
+  한 비디오 클립이 하나의 입력 단위이며, 예측도 클립마다 하나의 파일로 도출한다.
+  입력은 음향과 영상 데이터이며, 음향은 <code>audio/{clip}.wav</code>, 영상은 <code>video/{clip}.mp4</code>로 주어진다.
+</p>
+<p>
+  음향은 360도 방향의 정보를 담은 FOA 녹음을 스테레오로 변환한 것이다.
+  영상은 360도 영상에서 카메라가 바라보는 방향만 잘라낸 일반 시야각의 영상이다. 다만, 카메라 시점이 고정된 것이 아니라 카메라가 여러 방향으로 회전한다.
+  스테레오 음향은 좌우 방향은 비교적 잘 드러나지만 앞과 뒤를 구분하기 어렵다.
+  영상의 시야가 제한되어 있으므로 소리의 주인이 화면에 보이면 앞뒤를 구분하는 단서가 되지만, 화면 밖에서 나는 소리에 대해서는 영상에서 얻을 수 있는 정보가 없다.
+  반대로, 화면에 있는 소리라도 음향만으로는 앞뒤를 구분하기 어렵다. 즉, 영상과 음향을 모두 활용해야 방위각을 정확히 추정할 수 있다.
+</p>
+<p>
+  입력 데이터의 형식과 규약은 3절에서 자세히 설명한다.
+</p>
+
+<h3>2.2 출력 형식</h3>
+<p>
+  출력은 비디오 클립의 매 프레임마다 발생하는 음향 이벤트에 대한 예측값이다. 각 프레임에서 활성 상태인 소리 이벤트의 클래스, 방위각, 거리, 그리고 화면 안에 있는지 여부(onscreen)를 추정한다.
+  한 프레임에서 여러 이벤트가 겹칠 수 있으며, 같은 클래스의 이벤트끼리 겹치는 경우도 있다.
+</p>
+
+<h3>2.3 정답 라벨 형식 (train, val)</h3>
+<p><code>labels/{clip}.csv</code>는 헤더가 있는 csv이다. 아래는 형식을 보이기 위한 예시이다.</p>
+<pre><code>frame,class,source,azimuth,distance,onscreen
+12,1,2,35,180,1
+12,8,0,-120,250,0
+13,1,2,34,181,1</code></pre>
+<table>
+  <thead><tr><th>열</th><th>설명</th></tr></thead>
+  <tbody>
+  <tr><td><code>frame</code></td><td>0~199의 프레임 번호. 프레임 k의 기준 시각은 0.1k + 0.05초이다. 한 프레임에 여러 행이 있을 수 있고, 소리가 없는 프레임에는 행이 없다.</td></tr>
+  <tr><td><code>class</code></td><td>클래스 번호 0~12 (3.3절).</td></tr>
+  <tr><td><code>source</code></td><td>정답에서는 소리를 내는 사람의 번호이며 0은 사람이 아닌 소리이다. 예측에서는 임의의 정수를 쓸 수 있고 점수에 영향이 없다.</td></tr>
+  <tr><td><code>azimuth</code></td><td>해당 프레임의 카메라 기준 방위각(도, 정수). 정면이 0이고 반시계 방향이 양수이며 범위는 −180~180이다.</td></tr>
+  <tr><td><code>distance</code></td><td>소리까지의 거리(cm, 정수).</td></tr>
+  <tr><td><code>onscreen</code></td><td>소리 방향이 카메라 시야 안이면 1, 밖이면 0.</td></tr>
+  </tbody>
+</table>
+
+<h3>2.4 제출 형식 (예측 csv)</h3>
+<p>
+  test의 모든 클립에 대해 예측 csv를 하나씩 만든다. 파일 이름은 입력 클립과 같게 하고(<code>test_00000.csv</code>), 열 구성은 정답 라벨과 같다. 아래는 형식을 보이기 위한 예시이다.
+</p>
+<pre><code>frame,class,source,azimuth,distance,onscreen
+0,1,0,-60,150,0
+0,8,1,100,300,0
+1,1,0,-58,152,0</code></pre>
+<ul>
+  <li><b>frame</b>은 0~199이다. 이 범위를 벗어난 프레임은 채점에서 무시한다.</li>
+  <li><b>azimuth</b>는 카메라 시점을 기준으로 한 방위각이다. (−180~180)</li>
+  <li><b>distance</b>는 cm 단위의 정수를 권장한다.</li>
+  <li><b>onscreen</b>은 0 또는 1이다.</li>
+  <li><b>source</b>는 같은 프레임, 같은 클래스의 이벤트를 구분하는 번호로만 쓰인다. 같은 프레임과 클래스에서 최대 10개까지 인식한다.</li>
+  <li>예측할 이벤트가 없는 프레임에는 행을 쓰지 않는다. csv가 없는 클립은 아무것도 예측하지 않은 것으로 채점한다.</li>
+</ul>
+<p>베이스라인의 <code>run.py predict</code>가 이 형식의 csv와 제출용 zip을 만든다. 직접 구현할 경우 <code>utils.py</code>의 <code>write_to_dcase_output_format</code>을 참고한다.</p>
+
+<h3>2.5 제출 파일 구성</h3>
+<pre><code>submission.zip
+  test_00000.csv
+  test_00001.csv
+  ...                  # 폴더 없이 csv만</code></pre>
+</section>
+
+
+<!-- ====================================================== 3 -->
+<section id="dataset">
+<h2 data-no="3">데이터셋</h2>
+
+<h3>3.1 원본 데이터 (STARSS23)</h3>
+<p>
+  원본은 STARSS23이다. 핀란드 Tampere 대학교와 일본 Sony의 여러 방에서 사람들이 실제로 연기하며 촬영한 데이터로, FOA 형식의 음향과 360도 영상, 그리고 100 ms 단위로 달린 소리 이벤트 정답이 포함되어 있다.
+  이 챌린지는 개발용(dev) 데이터 중 음향, 영상, 정답이 모두 있는 녹음만 사용한다.
+</p>
+
+<h3>3.2 데이터 생성 방법</h3>
+<p>한 클립은 원본 비디오에서 20초(라벨 200프레임) 구간을 잘라 아래 순서로 만든다.</p>
+<ol>
+  <li>
+    <b>구간 선택.</b> train은 영상 길이에 비례해 시작 위치를 무작위로 뽑으며, 같은 영상에서 구간이 겹칠 수 있다. val과 test는 녹음의 앞에서부터 겹치지 않게 모두 자른다.
+    정답이 거의 없는 구간과 16 bit 저장 시 클리핑이 생기는 구간은 제외했다.
+  </li>
+  <li>
+    <b>카메라 궤적.</b> 정답과 무관하게 시드만으로 정한다.
+    <ul>
+      <li>좌우(yaw): ψ(t) = ψ<sub>0</sub> + s·ω·t
+        <br>ψ<sub>0</sub>는 0~360° 균등 분포를 따르고, s는 회전 방향(±1), ω는 약 18°/s이며 U(0.9, 1.1)를 곱한다. 클립 하나에서 대략 한 바퀴를 돌도록 설계했다.</li>
+      <li>위아래(pitch): φ(t) = −12.5° + 12.5°·sin(2πt/P + φ<sub>0</sub>)<br> 범위는 −25°~0°이고 주기 P는 10~20초에서 고른다.</li>
+    </ul>
+  </li>
+  <li>
+    <b>음향 변환.</b> FOA(W, Y, Z, X)를 카메라 방향 θ = −ψ(t)에 맞춰 샘플 단위로 스테레오로 변환한다.
+    <code>newY = sinθ·X + cosθ·Y</code>, <code>L = W + newY</code>, <code>R = W − newY</code>.
+  </li>
+  <li><b>영상 렌더링.</b> 360도 영상에서 프레임마다 카메라 자세 (ψ, φ)에 해당하는 투시 영상을 직접 렌더링한다.</li>
+  <li><b>정답 변환.</b> 원본의 세계 기준 방위각 az를 카메라 기준 방위각인 <code>wrap(az − ψ)</code>로 바꾼다.</li>
+</ol>
+<p class="note">모든 기준 시각은 라벨 프레임의 가운데이다. 프레임 k(0~199)는 클립 시작 후 0.1k + 0.05초이며, 영상 프레임, 카메라 자세, 음향 변환에 같은 시각을 사용한다.</p>
+
+<h3>3.3 클래스 구성</h3>
+<p>소리 이벤트는 아래 13개 클래스 중 하나로 분류된다. 클래스 번호는 라벨 파일의 <code>class</code> 열에 쓰인다.</p>
+<div class="scroll">
+<table>
+  <thead><tr><th>번호</th><th>클래스</th><th>설명</th></tr></thead>
+  <tbody>
+  <tr><td>0</td><td>Female speech</td><td>여성 말소리</td></tr>
+  <tr><td>1</td><td>Male speech</td><td>남성 말소리</td></tr>
+  <tr><td>2</td><td>Clapping</td><td>박수</td></tr>
+  <tr><td>3</td><td>Telephone</td><td>전화벨</td></tr>
+  <tr><td>4</td><td>Laughter</td><td>웃음</td></tr>
+  <tr><td>5</td><td>Domestic sounds</td><td>생활 소음</td></tr>
+  <tr><td>6</td><td>Walk, footsteps</td><td>발걸음</td></tr>
+  <tr><td>7</td><td>Door open/close</td><td>문 여닫는 소리</td></tr>
+  <tr><td>8</td><td>Music</td><td>음악</td></tr>
+  <tr><td>9</td><td>Musical instrument</td><td>악기 연주</td></tr>
+  <tr><td>10</td><td>Water tap</td><td>수도꼭지 물소리</td></tr>
+  <tr><td>11</td><td>Bell</td><td>종소리</td></tr>
+  <tr><td>12</td><td>Knock</td><td>노크</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>3.4 데이터 분할</h3>
+<p>
+  데이터는 train, val, test로 나눈다. 같은 방에서 촬영한 데이터는 서로 다른 split에 들어가지 않도록 구성했다. 방이 같으면 벽면 구조, 잔향 등이 비슷하여 성능이 왜곡될 가능성이 있기 때문이다.
+</p>
+<table>
+  <thead><tr><th>split</th><th>용도</th><th>정답</th></tr></thead>
+  <tbody>
+  <tr><td>train</td><td>모델 학습</td><td>공개</td></tr>
+  <tr><td>val</td><td>모델 선택 및 중간 평가</td><td>공개</td></tr>
+  <tr><td>test</td><td>최종 평가</td><td>비공개 (입력만 공개)</td></tr>
+  </tbody>
+</table>
+
+<h3>3.5 파일 구성 및 다운로드</h3>
+<pre><code>main20/
+  train/  video/*.mp4  audio/*.wav  labels/*.csv  meta/*.csv    # 공개
+  val/    (train과 동일한 구조)                                   # 공개
+  test/   video/*.mp4  audio/*.wav                              # 입력만 공개</code></pre>
+<p>클립 이름은 <code>{split}_{번호 5자리}</code>(예: <code>train_00012</code>)이며, video, audio, labels가 같은 이름으로 대응된다.</p>
+<table>
+  <thead><tr><th>파일</th><th>내용</th></tr></thead>
+  <tbody>
+  <tr><td><code>train.zip</code></td><td>train 영상, 음향, 라벨, meta</td></tr>
+  <tr><td><code>val.zip</code></td><td>val 영상, 음향, 라벨, meta</td></tr>
+  <tr><td><code>test_inputs.zip</code></td><td>평가용 데이터: test 영상, 음향 (정답 라벨 없음)</td></tr>
+  </tbody>
+</table>
+<p>데이터셋은 <a data-gh="/tree/main/dataset" href="https://github.com/bbbmah/ASR_2026_Challenge_MovCam_AV-SELD/tree/main/dataset">링크</a>에서 다운로드할 수 있다.</p>
+
+<h3>3.6 파일 형식</h3>
+<table>
+  <thead><tr><th>항목</th><th>형식</th></tr></thead>
+  <tbody>
+  <tr><td>음향</td><td>스테레오 wav, 24 kHz, 16 bit, 20초</td></tr>
+  <tr><td>영상</td><td>mp4 (OpenCV <code>mp4v</code>), 640×360, 10 fps, 200프레임. 수평 시야 100°, 수직 시야 약 67.7°</td></tr>
+  <tr><td>라벨</td><td>csv, 100 ms 프레임 단위. 열 구성은 2.3절 참조</td></tr>
+  </tbody>
+</table>
+<p>(영상 프레임 k와 라벨 프레임 k는 같은 시각이다.)</p>
+
+<h3>3.7 유의 사항</h3>
+<ul>
+  <li><b>meta 폴더.</b> train과 val에만 있으며, 정답의 세계 기준 방위각과 고도(<code>*_ext.csv</code>), 프레임별 카메라 자세(<code>*_traj.csv</code>)가 들어 있다. 본 챌린지에서 다루지 않는 라벨이며, 참여자들 개개인의 모델 및 데이터 분석용으로 사용할 수 있다. 추론 입력으로 쓸 수 없다(5.2절).</li>
+  <li><b>영상 코덱.</b> <code>mp4v</code>는 일부 브라우저와 플레이어에서 재생되지 않을 수 있으니 주의한다. OpenCV와 ffmpeg로는 정상적으로 재생할 수 있다.</li>
+</ul>
+</section>
+
+
+
+
+<!-- ====================================================== 4 -->
+<section id="metrics">
+<h2 data-no="4">평가 지표</h2>
+<p>
+  평가는 SELD의 표준 방식을 따르며, 모든 지표를 100 ms 프레임 단위로 세어 클래스별로 계산한 뒤 평균한다.
+</p>
+
+<h3>4.1 순위 기준 점수 (F<sub>ext</sub>)</h3>
+<p>
+  순위는 위치까지 맞힌 검출 점수인 F<sub>ext</sub>로 정한다. 프레임과 클래스마다 예측과 정답을 방위각 차이를 기준으로 짝지은 뒤(헝가리안 매칭), 짝이 아래 조건을 모두 만족하면 TP로 센다.
+</p>
+<ol>
+  <li>클래스가 같다.</li>
+  <li>방위각 오차가 20° 이하이다. 오차는 360도 기준 원형 차이 <code>|((a − b + 180) mod 360) − 180|</code>로 계산한다.</li>
+  <li>상대 거리 오차 <code>|d<sub>pred</sub> − d<sub>ref</sub>| / d<sub>ref</sub></code>가 1.0 이하이다.</li>
+</ol>
+<p>
+  짝은 지어졌지만 조건을 만족하지 못하면 FP<sub>spatial</sub>로 센다. 한 프레임에서 예측이 정답보다 많으면 초과분은 FP, 적으면 부족분은 FN이다. 클래스 c의 점수와 최종 점수는 다음과 같다.
+</p>
+<pre><code>F_c = TP_c / ( TP_c + FP_spatial_c + 0.5 * (FP_c + FN_c) )
+F   = 정답이 존재하는 클래스들의 F_c 평균</code></pre>
+<p>
+  정답이 하나도 없는 클래스는 평균에서 제외한다. 채점 프레임 수는 항상 클립 길이(200)로 고정하므로, 마지막 소리 이후의 오검출이나 정답이 없는 클립에서의 오검출도 FP로 센다.
+</p>
+
+<h3>4.2 보조 지표</h3>
+<div class="scroll">
+<table>
+  <thead><tr><th>지표</th><th>설명</th><th>방향</th></tr></thead>
+  <tbody>
+  <tr><td>F<sub>basic</sub></td><td>F<sub>ext</sub>와 같은 계산이되 정답과 예측의 방위각을 모두 앞쪽(−90°~90°)으로 접어서 비교한다. 즉, 앞뒤를 틀려도 감점되지 않는다. 기존 SELD 챌린지와의 호환을 위해 함께 보고한다.</td><td class="arrow">↑</td></tr>
+  <tr><td>DOAE<sub>ext</sub> (°)</td><td>클래스가 맞게 짝지어진 검출의 평균 방위각 오차.</td><td class="arrow">↓</td></tr>
+  <tr><td>RDE</td><td>짝지어진 검출의 평균 상대 거리 오차(0.35는 35%).</td><td class="arrow">↓</td></tr>
+  <tr><td>OSA (%)</td><td>On-screen accuracy. 짝지어진 검출 중 onscreen(화면에 표시된)을 맞힌 비율.</td><td class="arrow">↑</td></tr>
+  </tbody>
+</table>
+</div>
+<p class="note">↑는 높을수록, ↓는 낮을수록 좋은 지표이다.</p>
+
+<h3>4.3 순위 산정 규칙</h3>
+<ul>
+  <li>순위는 F<sub>ext</sub>가 높은 순서로 정한다.</li>
+  <li>모든 점수는 split 전체 클립을 한꺼번에 계산한 값이며, 클립별 점수의 평균이 아니다.</li>
+</ul>
+
+<h3>4.4 채점 코드 사용법</h3>
+<pre><code>python score.py --pred {예측_csv_폴더} --ref val/labels --clip_len 200 \
+                --modality audio_visual --out scores.json</code></pre>
+<p>
+  출력은 ext(360도 기준)와 basic(앞 180도 기준) 두 방식에 대한 F, DOA 오차, 거리 오차, 상대 거리 오차, onscreen 정확도와 이 값들의 클래스별 결과이다.
+  이 페이지의 F<sub>ext</sub>, DOAE<sub>ext</sub>, RDE, OSA는 json에서 각각 ext의 <code>F</code>, <code>DOA_err</code>, <code>rel_dist_err</code>, <code>onscreen_acc</code>에 해당한다.
+  코드는 <a data-gh="/blob/main/baseline/seld_challenge/score.py" href="https://github.com/bbbmah/ASR_2026_Challenge_MovCam_AV-SELD/blob/main/baseline/seld_challenge/score.py">score.py</a>,
+  <a data-gh="/blob/main/baseline/seld_challenge/metrics.py" href="https://github.com/bbbmah/ASR_2026_Challenge_MovCam_AV-SELD/blob/main/baseline/seld_challenge/metrics.py">metrics.py</a>,
+  <a data-gh="/blob/main/baseline/seld_challenge/seld_label_utils.py" href="https://github.com/bbbmah/ASR_2026_Challenge_MovCam_AV-SELD/blob/main/baseline/seld_challenge/seld_label_utils.py">seld_label_utils.py</a>를 참조한다.
+  <br>test 정답은 공개하지 않으므로 test 채점은 주최 측이 같은 코드로 수행한다.
+</p>
+</section>
+
+
+<!-- ====================================================== 5 -->
+<section id="rules">
+<h2 data-no="5">챌린지 규칙</h2>
+
+<h3>5.1 참가 방식</h3>
+<ul>
+  <li>개인 또는 팀으로 참가할 수 있다. 한 사람은 하나의 팀에만 속한다.</li>
+  <li>제출물은 2.5절 형식의 <code>submission.zip</code>과 시스템 설명서이다. 시스템 설명서에는 모델 구조, 입력 특징, 학습 데이터, 외부 데이터와 사전학습 모델, 학습 방법, 파라미터 수 등의 정보를 기입한다.</li>
+</ul>
+
+<h3>5.2 데이터 사용 규정</h3>
+<ul>
+  <li>학습에는 이 챌린지가 제공하는 train과 val을 사용한다. 최종 모델을 만들 때 val을 학습에 합쳐도 되며, 이 경우 시스템 설명서에 명시한다.</li>
+  <li>test 입력은 추론에만 사용한다. test 입력으로 모델을 학습하거나 적응시키는 것(준지도 학습, 의사 라벨, 테스트 시 적응 포함)과 사람이 직접 라벨을 다는 것은 금지한다.</li>
+  <li>하이퍼파라미터와 모델 선택은 val로 수행한다. test 결과를 보고 선택하는 것은 금지한다.</li>
+  <li>카메라 자세 정보(<code>meta/</code>의 <code>cam_yaw</code>, <code>cam_pitch</code>, <code>*_traj.csv</code>)는 추론 입력으로 사용할 수 없다. 모델이 음향과 영상만으로 답하는 것이 이 챌린지의 전제이다. 학습 중 보조 목표로 사용하는 것은 허용하되 시스템 설명서에 명시한다.</li>
+  <li>공개된 외부 데이터의 사용을 허용한다. 사용한 외부 데이터는 모두 시스템 설명서에 적는다.</li>
+  <li>공개된 사전학습 가중치(예: ImageNet ResNet)의 사용을 허용한다. 이름과 출처를 시스템 설명서에 적는다.</li>
+  <li>원본 STARSS23 개발 데이터를 직접 받아 이 챌린지와 같은 방식으로 다시 렌더링하여 추가 학습 데이터로 쓰는 것은 train에 속한 방의 녹음에 한해 허용한다. 생성 방법과 규모를 시스템 설명서에 적는다.</li>
+  <li>데이터 증강은 자유롭게 사용할 수 있다. 다만 L/R 채널의 레벨이나 시간차를 바꾸는 변환은 방향 단서를 훼손하므로, 라벨을 함께 바꾸지 않는 한 사용하지 않는다.</li>
+</ul>
+
+<h3>5.3 공정성</h3>
+<ul>
+  <li>test 정답을 알아내려는 모든 시도는 실격 사유이다. 여러 번 제출하여 점수 변화로 정답을 추정하는 것도 여기에 포함된다.</li>
+  <li>규칙 위반이 확인되면 해당 제출을 리더보드에서 제외한다.</li>
+</ul>
+
+<h3>5.4 라이선스 및 인용</h3>
+<ul>
+  <li>데이터는 원본 STARSS23의 이용 조건을 따르며 연구와 챌린지 목적으로만 사용한다.</li>
+  <li>이 챌린지의 결과를 발표할 때에는 STARSS23을 인용한다(7.6절).</li>
+</ul>
+</section>
+
+
+<!-- ====================================================== 6 -->
+<section id="leaderboard">
+<h2 data-no="6">리더보드</h2>
+<p>
+  리더보드는 test 점수를 기준으로 한다. 참가 팀이 제출한 csv를 주최 측이 test 정답으로 채점하여 이 표에 반영하며, 베이스라인의 val 점수는 참고용으로 아래에 따로 적는다.
+</p>
+
+<h3>6.1 test 점수 순위</h3>
+<div class="scroll">
+<table>
+  <thead><tr><th>순위</th><th>시스템</th><th class="num vcol">F<sub>ext</sub> (%) [95% 구간]</th><th class="num">F<sub>basic</sub> (%)</th><th class="num">DOAE<sub>ext</sub> (°)</th><th class="num">OSA (%)</th></tr></thead>
+  <tbody>
+  <tr><td>1</td><td>B2 &nbsp;<span class="note">영상+음향, 원래 구조</span></td><td class="num vcol">10.4 [9.1, 11.8]<span class="bar" style="width:52%"></span></td><td class="num">17.1</td><td class="num">44.9</td><td class="num">77.5</td></tr>
+  <tr><td>2</td><td>B3 &nbsp;<span class="note">B2 + 화면 전체 + 시간 창</span></td><td class="num vcol">10.4 [9.5, 11.4]<span class="bar" style="width:52%"></span></td><td class="num">15.9</td><td class="num">48.3</td><td class="num">76.3</td></tr>
+  <tr class="ref"><td>참고</td><td>B2-0 &nbsp;<span class="note">B2와 같은 구조, 영상=0 (대조군, 순위 제외)</span></td><td class="num vcol">10.2 [8.9, 11.5]<span class="bar" style="width:51%"></span></td><td class="num">17.3</td><td class="num">58.0</td><td class="num">70.6</td></tr>
+  <tr class="todo"><td>—</td><td colspan="5">참가 팀 결과 (채점 후 추가)</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>6.2 참고: 베이스라인 val 점수</h3>
+<p>같은 모델을 val로 채점한 결과이다. 개발 중 자신의 모델을 비교하는 기준으로 쓸 수 있다. 다만 베이스라인은 val에서 가장 좋은 에폭을 골랐고 val은 규모가 작기 때문에, val 점수가 test보다 크게 높게 나온다.</p>
+<div class="scroll">
+<table>
+  <thead><tr><th>시스템</th><th class="num vcol">F<sub>ext</sub> (%) [95% 구간]</th><th class="num">F<sub>basic</sub> (%)</th><th class="num">DOAE<sub>ext</sub> (°)</th><th class="num">OSA (%)</th></tr></thead>
+  <tbody>
+  <tr><td>B2</td><td class="num vcol">17.2 [14.2, 21.3]<span class="bar" style="width:86%"></span></td><td class="num">22.2</td><td class="num">33.5</td><td class="num">83.4</td></tr>
+  <tr><td>B3</td><td class="num vcol">17.9 [14.9, 22.6]<span class="bar" style="width:89%"></span></td><td class="num">22.3</td><td class="num">30.3</td><td class="num">88.1</td></tr>
+  <tr class="ref"><td>B2-0 <span class="note">(대조군)</span></td><td class="num vcol">14.9 [12.4, 17.8]<span class="bar" style="width:74%"></span></td><td class="num">20.7</td><td class="num">41.6</td><td class="num">77.9</td></tr>
+  </tbody>
+</table>
+</div>
+
+<p class="note" style="margin-top:22px">
+  · 95% 구간은 같은 20초 창을 한 단위로 보고 창을 2,000번 다시 뽑는 부트스트랩으로 계산했다.<br>
+  · 학습에는 train만 사용했고 모델 선택은 val의 F<sub>ext</sub>로 했다. test는 모델 선택에 사용하지 않았다.
+</p>
+</section>
+
+
+<!-- ====================================================== 7 -->
+<section id="baseline">
+<h2 data-no="7">베이스라인 모델</h2>
+
+<h3>7.1 모델 구조</h3>
+<p>
+  베이스라인은 DCASE 2025 Task 3의 공식 베이스라인(<a href="https://github.com/partha2409/DCASE2025_seld_baseline">partha2409/DCASE2025_seld_baseline</a>)을 이 챌린지의 데이터와 채점 방식에 맞게 수정한 것이다.
+</p>
+<ul>
+  <li><b>음향 분기.</b> 스테레오 로그멜 스펙트로그램을 CNN, 멀티헤드 셀프 어텐션, GRU에 통과시킨다.</li>
+  <li><b>영상 분기.</b> 프레임마다 ImageNet으로 사전학습된 ResNet-50 특징을 추출하고, 트랜스포머 디코더의 cross-attention으로 음향 특징과 융합한다.</li>
+  <li><b>출력.</b> 클래스당 3개의 트랙을 가지는 Multi-ACCDOA 표현에 거리와 onscreen 출력을 추가한 형식이다. 손실은 ADPIT를 사용한다.</li>
+  <li><b>주요 수정.</b> 360도 방위각(−180°~180°)을 다루도록 라벨 처리와 채점을 고쳤고, 영상이 이미 10 fps이므로 프레임 간격 계산도 고쳤다.</li>
+</ul>
+
+<h3>7.2 실험 설정 (프리셋)</h3>
+<div class="scroll">
+<table>
+  <thead><tr><th>프리셋</th><th>모델</th><th>영상 입력</th><th>용도</th></tr></thead>
+  <tbody>
+  <tr><td><code>B1</code></td><td>음향만 사용</td><td>없음</td><td>영상 효과를 비교하기 위한 참고 모델</td></tr>
+  <tr><td><code>B2</code></td><td>영상 + 음향 (원래 구조)</td><td>실제 영상, 화면 가운데만</td><td>기준선</td></tr>
+  <tr><td><code>B2-0</code></td><td>B2와 동일한 구조</td><td>영상 특징을 0으로 대체</td><td>구조 효과와 영상 효과를 분리하는 대조군</td></tr>
+  <tr><td><code>B3</code></td><td>B2 + 시간 창 제한(±2프레임)</td><td>실제 영상, 화면 전체</td><td>영상을 더 활용하도록 개선한 모델</td></tr>
+  </tbody>
+</table>
+</div>
+<p>어떤 프리셋에서도 카메라 자세는 모델 입력으로 사용하지 않는다.</p>
+
+<h3>7.3 실행 방법</h3>
+<p>Colab 노트북(<code>baseline/seld_challenge/colab_run.ipynb</code>)의 설정 칸만 바꾸면서 위에서부터 실행하면 된다. 명령줄에서는 다음과 같이 실행한다.</p>
+<pre><code>cd baseline/seld_challenge
+python run.py prepare  --dataset main20 --preset B2     # zip을 로컬에 풀기
+python run.py features --dataset main20 --preset B2     # 음향, 영상 특징 추출 (캐시)
+python run.py train    --dataset main20 --preset B2     # 학습 (매 에폭 val 채점, 최고 모델 저장)
+python run.py eval     --dataset main20 --preset B2     # val 채점
+python run.py predict  --dataset main20 --preset B2     # test 예측 csv와 제출 zip 생성
+# 각 명령에 --set drive_root=결과_저장_폴더 --set seed=2 처럼 설정을 덮어쓸 수 있다.</code></pre>
+<p>
+  기본 설정은 200 에폭, 학습률 0.001, 배치 64이며, 모델은 val의 F<sub>ext</sub>가 가장 높은 에폭으로 선택한다.
+  자세한 설정과 문제 해결 방법은 <code>README_baseline.md</code>에 있다.
+</p>
+
+<h3>7.4 베이스라인 분석 결과</h3>
+<ul>
+  <li><b>영상 자체의 효과는 거의 없다.</b> test F<sub>ext</sub>에서 B2와 B2-0의 차이는 +0.2%p이고, 구간이 0을 크게 포함한다. B2가 음향만 쓰는 B1보다 3%p 정도 높은 것은 모델 구조가 커진 것으로 추정한다.</li>
+  <li><b>영상은 다른 방식으로는 활용된다.</b> 영상 모델은 앞뒤 혼동(DOAE<sub>ext</sub> − DOAE<sub>basic</sub>)이 약 11° 줄고 onscreen 정확도도 높다.</li>
+  <li><b>영상 전처리의 시야 손실.</b> 원래 전처리는 화면 가운데만 잘라 ResNet에 입력하므로 수평 시야 100° 중 약 60°만 사용한다. 화면 가장자리에서 나는 소리는 영상 모델이 보지 못하며, B3 설정이 이를 보완한다.</li>
+  <li><b>시간 정보 부재.</b> 원래 디코더에는 위치 인코딩과 시간 마스크가 없어서 음향 프레임이 영상의 모든 프레임을 동일하게 참조한다. 영상의 시간 위치는 모델이 데이터에서 스스로 알아내야 한다.</li>
+  <li><b>과적합.</b> 모든 모델이 심하게 과적합한다. 학습 손실은 계속 내려가지만 val 손실은 초반 에폭에서 최소가 된 뒤 다시 오른다.</li>
+</ul>
+
+<h3>7.5 GitHub 저장소 구성</h3>
+<table>
+  <thead><tr><th>구성 요소</th><th>링크</th></tr></thead>
+  <tbody>
+  <tr><td>저장소</td><td><a data-gh="" href="https://github.com/bbbmah/ASR_2026_Challenge_MovCam_AV-SELD">GitHub</a></td></tr>
+  <tr><td>베이스라인 코드</td><td><a data-gh="/tree/main/baseline/seld_challenge" href="https://github.com/bbbmah/ASR_2026_Challenge_MovCam_AV-SELD/tree/main/baseline/seld_challenge">baseline/seld_challenge</a></td></tr>
+  <tr><td>데이터셋 (평가용 test 입력 포함)</td><td><a data-gh="/tree/main/dataset" href="https://github.com/bbbmah/ASR_2026_Challenge_MovCam_AV-SELD/tree/main/dataset">dataset</a></td></tr>
+  <tr><td>평가 방법 및 코드</td><td>이 페이지 4장, <a data-gh="/blob/main/baseline/seld_challenge/score.py" href="https://github.com/bbbmah/ASR_2026_Challenge_MovCam_AV-SELD/blob/main/baseline/seld_challenge/score.py">score.py</a></td></tr>
+  </tbody>
+</table>
+
+<h3>7.6 참고 문헌</h3>
+<ul>
+  <li>Shimada et al., <i>STARSS23: An audio-visual dataset of spatial recordings of real scenes with spatiotemporal annotations of sound events</i>, NeurIPS 2023 Datasets and Benchmarks.</li>
+  <li>Shimada et al., <i>Multi-ACCDOA: Localizing and detecting overlapping sounds from the same class with auxiliary duplicating permutation invariant training</i>, ICASSP 2022.</li>
+  <li>Mesaros et al., <i>Joint measurement of localization and detection of sound events</i>, WASPAA 2019.</li>
+  <li>Krause, Politis, Mesaros, <i>Sound event detection and localization with distance estimation</i>, arXiv:2403.11827.</li>
+  <li>Berghi et al., <i>Fusion of audio and audiovisual embeddings for sound event localization and detection</i>, ICASSP 2024.</li>
+  <li>
+    기존 사례: <a href="https://dcase.community/challenge2025/task-stereo-sound-event-localization-and-detection-in-regular-video-content">DCASE 2025 Task 3</a> (스테레오 AV-SELD),
+    <a href="https://github.com/SonyResearch/dcase2025_stereo_seld_data_generator">Sony 데이터 생성기</a>. 이 챌린지는 생성기의 변환식을 참고하여 카메라가 움직이도록 다시 구현했다.
+  </li>
+</ul>
+</section>
+
+</main>
+</div>
+
+<script>
+(function () {
+  // 저장소 주소는 이 한 곳만 바꾼다.
+  var REPO = "https://github.com/bbbmah/ASR_2026_Challenge_MovCam_AV-SELD";
+  document.querySelectorAll("a[data-gh]").forEach(function (a) { a.href = REPO + a.getAttribute("data-gh"); });
+
+  var sections = Array.prototype.slice.call(document.querySelectorAll("#content > section"));
+
+  /* h3에 id 부여 */
+  sections.forEach(function (s) {
+    s.querySelectorAll("h3").forEach(function (h, i) { if (!h.id) h.id = s.id + "-" + (i + 1); });
+  });
+
+  /* 챕터 표시창 생성 */
+  var side = document.getElementById("side");
+  var html = '<p class="name">AV-SELD Challenge</p><ol>';
+  sections.forEach(function (s) {
+    var h2 = s.querySelector("h2");
+    html += '<li data-sec="' + s.id + '"><a class="ch" href="#' + s.id + '"><span class="n">' + h2.getAttribute("data-no") + '</span>' + h2.textContent + '</a><ul class="sub">';
+    s.querySelectorAll("h3").forEach(function (h) { html += '<li><a href="#' + h.id + '">' + h.textContent.replace(/^\d+\.\d+\s*/, "") + '</a></li>'; });
+    html += '</ul></li>';
+  });
+  html += '</ol><a class="top" href="#">↑ 맨 위로</a>';
+  side.innerHTML = html;
+
+  /* 코드 복사 버튼 */
+  document.querySelectorAll("pre").forEach(function (pre) {
+    var b = document.createElement("button");
+    b.type = "button"; b.className = "copy"; b.textContent = "복사";
+    b.addEventListener("click", function () {
+      var text = pre.querySelector("code").innerText;
+      var done = function () { b.textContent = "복사됨"; setTimeout(function () { b.textContent = "복사"; }, 1200); };
+      try { navigator.clipboard.writeText(text).then(done); } catch (err) {}
+    });
+    pre.appendChild(b);
+  });
+
+  /* 스크롤 연동: 읽은 정도, 현재 챕터와 소제목 강조 */
+  var bar = document.getElementById("progress");
+  var chItems = side.querySelectorAll("li[data-sec]");
+  var h2s = sections.map(function (s) { return s.querySelector("h2"); });
+  var ticking = false;
+  function update() {
+    ticking = false;
+    var doc = document.documentElement;
+    var max = doc.scrollHeight - window.innerHeight;
+    bar.style.width = (max > 0 ? (window.scrollY / max) * 100 : 0) + "%";
+
+    var line = 140, cur = -1;
+    h2s.forEach(function (h, i) { if (h.getBoundingClientRect().top <= line) cur = i; });
+    chItems.forEach(function (li, i) { li.className = i === cur ? "on" : ""; });
+
+    side.querySelectorAll("ul.sub a").forEach(function (a) { a.className = ""; });
+    if (cur >= 0) {
+      var best = null;
+      sections[cur].querySelectorAll("h3").forEach(function (h) {
+        if (h.getBoundingClientRect().top <= line) best = h.id;
+      });
+      if (best) { var a = side.querySelector('ul.sub a[href="#' + best + '"]'); if (a) a.className = "on"; }
+    }
+  }
+  window.addEventListener("scroll", function () { if (!ticking) { ticking = true; requestAnimationFrame(update); } }, { passive: true });
+  window.addEventListener("resize", update);
+  update();
+})();
+</script>
+</body>
+</html>

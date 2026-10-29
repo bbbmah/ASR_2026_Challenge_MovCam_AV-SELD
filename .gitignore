@@ -1,0 +1,11 @@
+# 대용량 데이터는 저장소에 올리지 않고 Releases로 배포한다
+release_assets/
+*.zip
+*.zip.part*
+
+# 학습 결과와 캐시
+__pycache__/
+*.pth
+*.pt
+seld_runs/
+*.log
