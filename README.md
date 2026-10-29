@@ -14,8 +14,9 @@ DCASE 2025 Task 3(스테레오 AV-SELD)에서는 음향에 영상을 추가해�
 | `README_baseline.md` | 베이스라인 사용 설명서 |
 | `evaluation/` | 평가 코드(`score.py`, `metrics.py`, `seld_label_utils.py`)와 사용 설명서 |
 
-## 구글 드라이브 링크
-링크: (추가 예정)
+## 데이터셋 다운로드
+
+[구글 드라이브 링크](https://drive.google.com/drive/folders/1wp7aSEdEXEiiJWWLm-0XN4GdpZKb7wIU?usp=sharing)
 
 ## 빠른 시작
 

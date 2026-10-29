@@ -17,7 +17,7 @@ STARSS23 개발용(dev) 녹음(FOA 음향 + 360도 영상)으로 만든, 스테�
 ## 내려받기
 
 구글 드라이브에 아래 파일이 있습니다.
-링크: (추가 예정)
+[구글 드라이브 링크](https://drive.google.com/drive/folders/1wp7aSEdEXEiiJWWLm-0XN4GdpZKb7wIU?usp=sharing)
 
 | 파일 | 내용 |
 |---|---|
